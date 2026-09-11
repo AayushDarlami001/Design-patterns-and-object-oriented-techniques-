@@ -1,6 +1,7 @@
+import SensorList from "../features/sensors/SensorList";
+
 const sections = [
   { id: "overview", title: "Overview" },
-  { id: "sensors", title: "Sensors" },
   { id: "configuration", title: "Configuration" },
   { id: "automation", title: "Automation" },
   { id: "controls", title: "Controls" },
@@ -15,21 +16,38 @@ export default function DashboardPage() {
       </h2>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {sections.map((section) => (
-          <section
-            key={section.id}
-            id={section.id}
-            className="rounded-xl border bg-white p-6 shadow-sm"
-          >
-            <h3 className="text-lg font-semibold text-gray-900">
-              {section.title}
-            </h3>
+        <section
+          id="overview"
+          className="rounded-xl border bg-white p-6 shadow-sm"
+        >
+          <h3 className="text-lg font-semibold text-gray-900">
+            Overview
+          </h3>
 
-            <p className="mt-2 text-sm text-gray-500">
-              Placeholder for {section.title.toLowerCase()} functionality.
-            </p>
-          </section>
-        ))}
+          <p className="mt-2 text-sm text-gray-500">
+            Placeholder for overview functionality.
+          </p>
+        </section>
+
+        <SensorList />
+
+        {sections
+          .filter((section) => section.id !== "overview")
+          .map((section) => (
+            <section
+              key={section.id}
+              id={section.id}
+              className="rounded-xl border bg-white p-6 shadow-sm"
+            >
+              <h3 className="text-lg font-semibold text-gray-900">
+                {section.title}
+              </h3>
+
+              <p className="mt-2 text-sm text-gray-500">
+                Placeholder for {section.title.toLowerCase()} functionality.
+              </p>
+            </section>
+          ))}
       </div>
     </div>
   );
