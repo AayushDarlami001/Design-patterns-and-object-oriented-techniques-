@@ -1,7 +1,7 @@
 import SensorList from "../features/sensors/SensorList";
+import DeviceList from "../components/devices/DeviceList";
 
 const sections = [
-  { id: "overview", title: "Overview" },
   { id: "configuration", title: "Configuration" },
   { id: "automation", title: "Automation" },
   { id: "controls", title: "Controls" },
@@ -16,6 +16,7 @@ export default function DashboardPage() {
       </h2>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        {/* Overview */}
         <section
           id="overview"
           className="rounded-xl border bg-white p-6 shadow-sm"
@@ -29,25 +30,46 @@ export default function DashboardPage() {
           </p>
         </section>
 
-        <SensorList />
+        {/* Phase 2 - Sensors */}
+        <section
+          id="sensors"
+          className="rounded-xl border bg-white p-6 shadow-sm"
+        >
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+            Sensors
+          </h3>
 
-        {sections
-          .filter((section) => section.id !== "overview")
-          .map((section) => (
-            <section
-              key={section.id}
-              id={section.id}
-              className="rounded-xl border bg-white p-6 shadow-sm"
-            >
-              <h3 className="text-lg font-semibold text-gray-900">
-                {section.title}
-              </h3>
+          <SensorList />
+        </section>
 
-              <p className="mt-2 text-sm text-gray-500">
-                Placeholder for {section.title.toLowerCase()} functionality.
-              </p>
-            </section>
-          ))}
+        {/* Phase 3 - Devices */}
+        <section
+          id="devices"
+          className="rounded-xl border bg-white p-6 shadow-sm md:col-span-2"
+        >
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+            Devices
+          </h3>
+
+          <DeviceList />
+        </section>
+
+        {/* Future sections */}
+        {sections.map((section) => (
+          <section
+            key={section.id}
+            id={section.id}
+            className="rounded-xl border bg-white p-6 shadow-sm"
+          >
+            <h3 className="text-lg font-semibold text-gray-900">
+              {section.title}
+            </h3>
+
+            <p className="mt-2 text-sm text-gray-500">
+              Placeholder for {section.title.toLowerCase()} functionality.
+            </p>
+          </section>
+        ))}
       </div>
     </div>
   );

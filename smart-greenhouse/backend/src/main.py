@@ -5,6 +5,7 @@ from scalar_fastapi import get_scalar_api_reference
 from src.infrastructure.settings import settings
 from src.interfaces.api.health import router as health_router
 from src.interfaces.api.sensors import router as sensors_router
+from src.interfaces.api.devices import router as devices_router
 
 
 app = FastAPI(
@@ -32,6 +33,7 @@ app.add_middleware(
 # API routes
 app.include_router(health_router)
 app.include_router(sensors_router)
+app.include_router(devices_router)
 
 
 @app.get("/", include_in_schema=False)
@@ -40,6 +42,7 @@ def root() -> dict[str, str]:
         "message": "Smart Greenhouse API",
         "health": "/health",
         "sensors": "/api/sensors",
+        "devices": "/api/devices",
         "scalar": "/scalar",
         "openapi": "/openapi.json",
     }
