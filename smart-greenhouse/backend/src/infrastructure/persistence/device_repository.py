@@ -1,20 +1,24 @@
+from uuid import UUID
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from src.domain.devices.entity import Device
 from src.domain.sensors.entity import Sensor
-from src.infrastructure.persistence.models import DeviceRow
+from src.infrastructure.persistence.models import (
+    DeviceRow,
+    ZoneRow,
+)
 
 
 class DeviceRepository:
     def __init__(self, session: Session):
         self.session = session
 
-    # -------------------------
-    # Phase 2 sensor methods
-    # -------------------------
-
-    def add_sensor(self, sensor: Sensor) -> Sensor:
+    def add_sensor(
+        self,
+        sensor: Sensor,
+    ) -> Sensor:
         row = DeviceRow(
             device_type=sensor.device_type,
             role="sensor",
@@ -41,7 +45,9 @@ class DeviceRepository:
             .order_by(DeviceRow.created_at.desc())
         )
 
-        rows = self.session.scalars(statement).all()
+        rows = self.session.scalars(
+            statement
+        ).all()
 
         return [
             Sensor(
@@ -53,18 +59,18 @@ class DeviceRepository:
             for row in rows
         ]
 
-    # -------------------------
-    # Phase 3 device methods i updated the phase 3 inside phase 2
-
-    # -------------------------
-
-    def save_device(self, device: Device) -> Device:
+    def save_device(
+        self,
+        device: Device,
+    ) -> Device:
         row = DeviceRow(
             device_type=device.device_type,
             role=device.role,
             device_family=device.device_family,
             display_name=device.display_name,
             default_config=device.default_config,
+            zone_id=device.zone_id,
+            location_id=device.location_id,
         )
 
         self.session.add(row)
@@ -73,7 +79,10 @@ class DeviceRepository:
 
         return self._row_to_device(row)
 
-    def save_devices(self, devices: list[Device]) -> list[Device]:
+    def save_devices(
+        self,
+        devices: list[Device],
+    ) -> list[Device]:
         rows = [
             DeviceRow(
                 device_type=device.device_type,
@@ -81,6 +90,8 @@ class DeviceRepository:
                 device_family=device.device_family,
                 display_name=device.display_name,
                 default_config=device.default_config,
+                zone_id=device.zone_id,
+                location_id=device.location_id,
             )
             for device in devices
         ]
@@ -91,7 +102,10 @@ class DeviceRepository:
         for row in rows:
             self.session.refresh(row)
 
-        return [self._row_to_device(row) for row in rows]
+        return [
+            self._row_to_device(row)
+            for row in rows
+        ]
 
     def list_devices(
         self,
@@ -102,7 +116,8 @@ class DeviceRepository:
 
         if device_family is not None:
             statement = statement.where(
-                DeviceRow.device_family == device_family
+                DeviceRow.device_family
+                == device_family
             )
 
         if role is not None:
@@ -114,7 +129,102 @@ class DeviceRepository:
             DeviceRow.created_at.desc()
         )
 
-        rows = self.session.scalars(statement).all()
+        rows = self.session.scalars(
+            statement
+        ).all()
+
+        return [
+            self._row_to_device(row)
+            for row in rows
+        ]
+
+
+    def assign_device_to_zone(
+        self,
+        device_id: UUID,
+        zone_id: UUID,
+    ) -> Device | None:
+        device = self.session.get(
+            DeviceRow,
+            device_id,
+        )
+
+        if device is None:
+            return None
+
+        zone = self.session.get(
+            ZoneRow,
+            zone_id,
+        )
+
+        if zone is None:
+            raise LookupError(
+                "Zone not found"
+            )
+
+        device.zone_id = zone.id
+
+        # Location always comes from the zone.
+        device.location_id = zone.location_id
+
+        self.session.commit()
+        self.session.refresh(device)
+
+        return self._row_to_device(
+            device
+        )
+
+    def unassign_device(
+        self,
+        device_id: UUID,
+    ) -> Device | None:
+        device = self.session.get(
+            DeviceRow,
+            device_id,
+        )
+
+        if device is None:
+            return None
+
+        device.zone_id = None
+        device.location_id = None
+
+        self.session.commit()
+        self.session.refresh(device)
+
+        return self._row_to_device(
+            device
+        )
+
+    def list_devices_in_zone(
+        self,
+        location_id: UUID,
+        zone_id: UUID,
+    ) -> list[Device] | None:
+        zone = self.session.get(
+            ZoneRow,
+            zone_id,
+        )
+
+        if (
+            zone is None
+            or zone.location_id != location_id
+        ):
+            return None
+
+        statement = (
+            select(DeviceRow)
+            .where(
+                DeviceRow.zone_id == zone_id
+            )
+            .order_by(
+                DeviceRow.created_at.desc()
+            )
+        )
+
+        rows = self.session.scalars(
+            statement
+        ).all()
 
         return [
             self._row_to_device(row)
@@ -122,7 +232,9 @@ class DeviceRepository:
         ]
 
     @staticmethod
-    def _row_to_device(row: DeviceRow) -> Device:
+    def _row_to_device(
+        row: DeviceRow,
+    ) -> Device:
         return Device(
             id=row.id,
             device_type=row.device_type,
@@ -130,4 +242,6 @@ class DeviceRepository:
             device_family=row.device_family,
             display_name=row.display_name or "",
             default_config=row.default_config,
+            zone_id=row.zone_id,
+            location_id=row.location_id,
         )

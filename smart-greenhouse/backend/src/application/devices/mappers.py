@@ -4,7 +4,9 @@ from src.domain.devices.entity import Device
 
 def device_to_dto(device: Device) -> DeviceDto:
     if device.id is None:
-        raise ValueError("Device must be saved before converting to DTO")
+        raise ValueError(
+            "Device must be saved before converting to DTO"
+        )
 
     return DeviceDto(
         id=device.id,
@@ -13,8 +15,15 @@ def device_to_dto(device: Device) -> DeviceDto:
         device_family=device.device_family,
         display_name=device.display_name,
         default_config=device.default_config,
+        zone_id=device.zone_id,
+        location_id=device.location_id,
     )
 
 
-def devices_to_dto(devices: list[Device]) -> list[DeviceDto]:
-    return [device_to_dto(device) for device in devices]
+def devices_to_dto(
+    devices: list[Device],
+) -> list[DeviceDto]:
+    return [
+        device_to_dto(device)
+        for device in devices
+    ]

@@ -1,8 +1,8 @@
-import SensorList from "../features/sensors/SensorList";
 import DeviceList from "../components/devices/DeviceList";
+import LocationConfigWizard from "../components/config/LocationConfigWizard";
+import SensorList from "../features/sensors/SensorList";
 
 const sections = [
-  { id: "configuration", title: "Configuration" },
   { id: "automation", title: "Automation" },
   { id: "controls", title: "Controls" },
   { id: "events", title: "Events" },
@@ -16,7 +16,6 @@ export default function DashboardPage() {
       </h2>
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {/* Overview */}
         <section
           id="overview"
           className="rounded-xl border bg-white p-6 shadow-sm"
@@ -30,7 +29,6 @@ export default function DashboardPage() {
           </p>
         </section>
 
-        {/* Phase 2 - Sensors */}
         <section
           id="sensors"
           className="rounded-xl border bg-white p-6 shadow-sm"
@@ -42,7 +40,6 @@ export default function DashboardPage() {
           <SensorList />
         </section>
 
-        {/* Phase 3 - Devices */}
         <section
           id="devices"
           className="rounded-xl border bg-white p-6 shadow-sm md:col-span-2"
@@ -54,7 +51,17 @@ export default function DashboardPage() {
           <DeviceList />
         </section>
 
-        {/* Future sections */}
+        <section
+          id="configuration"
+          className="rounded-xl border bg-white p-6 shadow-sm md:col-span-2 xl:col-span-3"
+        >
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+            Configuration
+          </h3>
+
+          <LocationConfigWizard />
+        </section>
+
         {sections.map((section) => (
           <section
             key={section.id}
