@@ -16,11 +16,15 @@ class SimulationDeviceFactory(DeviceFamilyFactory):
     family_key = "simulation"
 
     def create_device_set(self) -> list[Device]:
-        moisture = get_sensor_creator("moisture").create_sensor(
+        moisture = get_sensor_creator(
+            "moisture"
+        ).create_sensor(
             "Simulation Moisture Sensor"
         )
 
-        light = get_sensor_creator("light").create_sensor(
+        light = get_sensor_creator(
+            "light"
+        ).create_sensor(
             "Simulation Light Sensor"
         )
 
@@ -76,11 +80,15 @@ class EdgeDeviceFactory(DeviceFamilyFactory):
     family_key = "edge"
 
     def create_device_set(self) -> list[Device]:
-        moisture = get_sensor_creator("moisture").create_sensor(
+        moisture = get_sensor_creator(
+            "moisture"
+        ).create_sensor(
             "Edge Moisture Sensor"
         )
 
-        light = get_sensor_creator("light").create_sensor(
+        light = get_sensor_creator(
+            "light"
+        ).create_sensor(
             "Edge Light Sensor"
         )
 
@@ -93,7 +101,7 @@ class EdgeDeviceFactory(DeviceFamilyFactory):
                 display_name=moisture.display_name,
                 default_config={
                     **moisture.default_config,
-                    "protocol": "gpio",
+                    "protocol": "mqtt",
                 },
             ),
             Device(
@@ -104,7 +112,7 @@ class EdgeDeviceFactory(DeviceFamilyFactory):
                 display_name=light.display_name,
                 default_config={
                     **light.default_config,
-                    "protocol": "i2c",
+                    "protocol": "mqtt",
                 },
             ),
             Device(
@@ -134,16 +142,25 @@ class EdgeDeviceFactory(DeviceFamilyFactory):
         ]
 
 
-DEVICE_FAMILY_FACTORIES: dict[str, DeviceFamilyFactory] = {
+DEVICE_FAMILY_FACTORIES: dict[
+    str,
+    DeviceFamilyFactory,
+] = {
     "simulation": SimulationDeviceFactory(),
     "edge": EdgeDeviceFactory(),
 }
 
 
-def get_device_family_factory(family: str) -> DeviceFamilyFactory:
-    factory = DEVICE_FAMILY_FACTORIES.get(family)
+def get_device_family_factory(
+    family: str,
+) -> DeviceFamilyFactory:
+    factory = DEVICE_FAMILY_FACTORIES.get(
+        family
+    )
 
     if factory is None:
-        raise ValueError(f"Unknown device family: {family}")
+        raise ValueError(
+            f"Unknown device family: {family}"
+        )
 
     return factory

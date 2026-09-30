@@ -19,6 +19,16 @@ export type DeviceDto = {
   default_config: Record<string, unknown>;
   zone_id: string | null;
   location_id: string | null;
+  sampling_interval_seconds: number;
+  tracking_enabled: boolean;
+};
+
+export type ReadingDto = {
+  device_id: string;
+  value: number;
+  unit: string;
+  source: string;
+  recorded_at: string;
 };
 
 export type ZoneDto = {
@@ -111,11 +121,9 @@ export async function getDevices(
 
   const query = params.toString();
 
-  const url = `${API_BASE_URL}/api/devices${
-    query ? `?${query}` : ""
-  }`;
-
-  const response = await fetch(url);
+  const response = await fetch(
+    `${API_BASE_URL}/api/devices${query ? `?${query}` : ""}`,
+  );
 
   if (!response.ok) {
     throw new Error("Failed to fetch devices");
@@ -136,6 +144,76 @@ export async function provisionDeviceFamily(
 
   if (!response.ok) {
     throw new Error("Failed to provision device family");
+  }
+
+  return response.json();
+}
+
+export async function readSensor(
+  deviceId: string,
+): Promise<ReadingDto> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/sensors/${deviceId}/read`,
+    {
+      method: "POST",
+    },
+  );
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+
+    throw new Error(
+      data?.detail || "Failed to read sensor",
+    );
+  }
+
+  return response.json();
+}
+
+export async function getSensorReadings(
+  deviceId: string,
+  limit = 20,
+): Promise<ReadingDto[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/sensors/${deviceId}/readings?limit=${limit}`,
+  );
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+
+    throw new Error(
+      data?.detail || "Failed to fetch readings",
+    );
+  }
+
+  return response.json();
+}
+
+export async function updateDeviceSampling(
+  deviceId: string,
+  samplingIntervalSeconds: number,
+  trackingEnabled: boolean,
+): Promise<DeviceDto> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/devices/${deviceId}/sampling`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        sampling_interval_seconds: samplingIntervalSeconds,
+        tracking_enabled: trackingEnabled,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    const data = await response.json().catch(() => null);
+
+    throw new Error(
+      data?.detail || "Failed to update sampling",
+    );
   }
 
   return response.json();

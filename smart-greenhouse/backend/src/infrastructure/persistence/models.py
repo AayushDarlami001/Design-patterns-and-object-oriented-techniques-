@@ -2,9 +2,11 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
     ForeignKey,
     Index,
+    Integer,
     Numeric,
     String,
     text,
@@ -134,6 +136,18 @@ class DeviceRow(Base):
         server_default=text("'{}'::jsonb"),
     )
 
+    sampling_interval_seconds: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("300"),
+    )
+
+    tracking_enabled: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        server_default=text("true"),
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
@@ -142,4 +156,49 @@ class DeviceRow(Base):
 
     __table_args__ = (
         Index("ix_devices_family", "device_family"),
+    )
+
+
+class ReadingRow(Base):
+    __tablename__ = "sensor_readings"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+
+    device_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("devices.id"),
+        nullable=False,
+    )
+
+    value: Mapped[float] = mapped_column(
+        Numeric(12, 4),
+        nullable=False,
+    )
+
+    unit: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+    )
+
+    source: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+    )
+
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_sensor_readings_device_recorded_at",
+            "device_id",
+            recorded_at.desc(),
+        ),
     )

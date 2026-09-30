@@ -12,19 +12,40 @@ from src.infrastructure.persistence.models import (
 
 
 class DeviceRepository:
-    def __init__(self, session: Session):
+    def __init__(
+        self,
+        session: Session,
+    ):
         self.session = session
 
     def add_sensor(
         self,
         sensor: Sensor,
     ) -> Sensor:
+        interval = sensor.default_config.get(
+            "sampling_interval_seconds",
+            sensor.default_config.get(
+                "sampling_interval",
+                300,
+            ),
+        )
+
+        config = {
+            **sensor.default_config,
+            "protocol": sensor.default_config.get(
+                "protocol",
+                "simulation",
+            ),
+        }
+
         row = DeviceRow(
             device_type=sensor.device_type,
             role="sensor",
             device_family="simulation",
             display_name=sensor.display_name,
-            default_config=sensor.default_config,
+            default_config=config,
+            sampling_interval_seconds=int(interval),
+            tracking_enabled=True,
         )
 
         self.session.add(row)
@@ -38,11 +59,17 @@ class DeviceRepository:
             default_config=row.default_config,
         )
 
-    def list_sensors(self) -> list[Sensor]:
+    def list_sensors(
+        self,
+    ) -> list[Sensor]:
         statement = (
             select(DeviceRow)
-            .where(DeviceRow.role == "sensor")
-            .order_by(DeviceRow.created_at.desc())
+            .where(
+                DeviceRow.role == "sensor"
+            )
+            .order_by(
+                DeviceRow.created_at.desc()
+            )
         )
 
         rows = self.session.scalars(
@@ -71,6 +98,12 @@ class DeviceRepository:
             default_config=device.default_config,
             zone_id=device.zone_id,
             location_id=device.location_id,
+            sampling_interval_seconds=(
+                device.sampling_interval_seconds
+            ),
+            tracking_enabled=(
+                device.tracking_enabled
+            ),
         )
 
         self.session.add(row)
@@ -92,6 +125,12 @@ class DeviceRepository:
                 default_config=device.default_config,
                 zone_id=device.zone_id,
                 location_id=device.location_id,
+                sampling_interval_seconds=(
+                    device.sampling_interval_seconds
+                ),
+                tracking_enabled=(
+                    device.tracking_enabled
+                ),
             )
             for device in devices
         ]
@@ -106,6 +145,20 @@ class DeviceRepository:
             self._row_to_device(row)
             for row in rows
         ]
+
+    def get_device(
+        self,
+        device_id: UUID,
+    ) -> Device | None:
+        row = self.session.get(
+            DeviceRow,
+            device_id,
+        )
+
+        if row is None:
+            return None
+
+        return self._row_to_device(row)
 
     def list_devices(
         self,
@@ -138,6 +191,54 @@ class DeviceRepository:
             for row in rows
         ]
 
+    def list_tracked_simulation_sensors(
+        self,
+    ) -> list[Device]:
+        statement = select(DeviceRow).where(
+            DeviceRow.role == "sensor",
+            DeviceRow.tracking_enabled.is_(True),
+        )
+
+        rows = self.session.scalars(
+            statement
+        ).all()
+
+        return [
+            self._row_to_device(row)
+            for row in rows
+            if row.default_config.get(
+                "protocol",
+                "simulation",
+            )
+            == "simulation"
+        ]
+
+    def update_sampling(
+        self,
+        device_id: UUID,
+        sampling_interval_seconds: int,
+        tracking_enabled: bool,
+    ) -> Device | None:
+        row = self.session.get(
+            DeviceRow,
+            device_id,
+        )
+
+        if row is None:
+            return None
+
+        row.sampling_interval_seconds = (
+            sampling_interval_seconds
+        )
+
+        row.tracking_enabled = (
+            tracking_enabled
+        )
+
+        self.session.commit()
+        self.session.refresh(row)
+
+        return self._row_to_device(row)
 
     def assign_device_to_zone(
         self,
@@ -163,8 +264,6 @@ class DeviceRepository:
             )
 
         device.zone_id = zone.id
-
-        # Location always comes from the zone.
         device.location_id = zone.location_id
 
         self.session.commit()
@@ -244,4 +343,10 @@ class DeviceRepository:
             default_config=row.default_config,
             zone_id=row.zone_id,
             location_id=row.location_id,
+            sampling_interval_seconds=(
+                row.sampling_interval_seconds
+            ),
+            tracking_enabled=(
+                row.tracking_enabled
+            ),
         )

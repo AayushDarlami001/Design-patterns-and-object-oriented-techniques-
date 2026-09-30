@@ -9,15 +9,16 @@ from fastapi import (
 )
 from sqlalchemy.orm import Session
 
-from src.application.devices.dto import DeviceDto
+from src.application.devices.dto import (
+    DeviceDto,
+    DeviceSamplingUpdateRequest,
+)
 from src.application.devices.family_service import DeviceFamilyService
 from src.application.devices.mappers import (
     device_to_dto,
     devices_to_dto,
 )
-from src.application.locations.dto import (
-    DeviceZoneAssignmentRequest,
-)
+from src.application.locations.dto import DeviceZoneAssignmentRequest
 from src.application.locations.zone_assignment_service import (
     ZoneAssignmentService,
 )
@@ -66,9 +67,7 @@ def provision_family(
     service = DeviceFamilyService(repository)
 
     try:
-        devices = service.provision_family(
-            family
-        )
+        devices = service.provision_family(family)
 
     except ValueError as exc:
         raise HTTPException(
@@ -102,6 +101,38 @@ def assign_device_zone(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=str(exc),
         ) from exc
+
+    if device is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Device not found",
+        )
+
+    return device_to_dto(device)
+
+
+@router.patch(
+    "/{device_id}/sampling",
+    response_model=DeviceDto,
+)
+def update_sampling(
+    device_id: UUID,
+    request: DeviceSamplingUpdateRequest,
+    db: Session = Depends(get_db),
+) -> DeviceDto:
+    if request.sampling_interval_seconds < 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Sampling interval must be at least 5 seconds",
+        )
+
+    repository = DeviceRepository(db)
+
+    device = repository.update_sampling(
+        device_id=device_id,
+        sampling_interval_seconds=request.sampling_interval_seconds,
+        tracking_enabled=request.tracking_enabled,
+    )
 
     if device is None:
         raise HTTPException(
