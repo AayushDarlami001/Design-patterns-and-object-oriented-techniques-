@@ -60,24 +60,69 @@ export type ZoneInput = {
   schedule?: Record<string, unknown>;
 };
 
+export type StrategyKey =
+  | "conservative"
+  | "aggressive";
+
+export type StrategyDto = {
+  location_id: string;
+  strategy_key: StrategyKey;
+};
+
+export type ZoneRecommendationDto = {
+  zone_id: string;
+  zone_name: string;
+  action: string;
+  reason: string;
+  score: number | null;
+};
+
+export type AutomationEvaluationDto = {
+  location_id: string;
+  strategy_key: StrategyKey;
+  action: string;
+  reason: string;
+  zones: ZoneRecommendationDto[];
+};
+
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:8000";
+
+async function getErrorMessage(
+  response: Response,
+  fallback: string,
+): Promise<string> {
+  const data = await response
+    .json()
+    .catch(() => null);
+
+  return data?.detail || fallback;
+}
 
 export async function getHealth(): Promise<HealthResponse> {
-  const response = await fetch(`${API_BASE_URL}/health`);
+  const response = await fetch(
+    `${API_BASE_URL}/health`,
+  );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch backend health");
+    throw new Error(
+      "Failed to fetch backend health",
+    );
   }
 
   return response.json();
 }
 
 export async function getSensors(): Promise<Sensor[]> {
-  const response = await fetch(`${API_BASE_URL}/api/sensors`);
+  const response = await fetch(
+    `${API_BASE_URL}/api/sensors`,
+  );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch sensors");
+    throw new Error(
+      "Failed to fetch sensors",
+    );
   }
 
   return response.json();
@@ -87,19 +132,25 @@ export async function createSensor(
   type: "moisture" | "light",
   displayName?: string,
 ): Promise<Sensor> {
-  const response = await fetch(`${API_BASE_URL}/api/sensors`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${API_BASE_URL}/api/sensors`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        type,
+        display_name: displayName,
+      }),
     },
-    body: JSON.stringify({
-      type,
-      display_name: displayName,
-    }),
-  });
+  );
 
   if (!response.ok) {
-    throw new Error("Failed to create sensor");
+    throw new Error(
+      "Failed to create sensor",
+    );
   }
 
   return response.json();
@@ -122,11 +173,15 @@ export async function getDevices(
   const query = params.toString();
 
   const response = await fetch(
-    `${API_BASE_URL}/api/devices${query ? `?${query}` : ""}`,
+    `${API_BASE_URL}/api/devices${
+      query ? `?${query}` : ""
+    }`,
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch devices");
+    throw new Error(
+      "Failed to fetch devices",
+    );
   }
 
   return response.json();
@@ -143,7 +198,9 @@ export async function provisionDeviceFamily(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to provision device family");
+    throw new Error(
+      "Failed to provision device family",
+    );
   }
 
   return response.json();
@@ -160,10 +217,11 @@ export async function readSensor(
   );
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-
     throw new Error(
-      data?.detail || "Failed to read sensor",
+      await getErrorMessage(
+        response,
+        "Failed to read sensor",
+      ),
     );
   }
 
@@ -179,10 +237,11 @@ export async function getSensorReadings(
   );
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-
     throw new Error(
-      data?.detail || "Failed to fetch readings",
+      await getErrorMessage(
+        response,
+        "Failed to fetch readings",
+      ),
     );
   }
 
@@ -199,20 +258,24 @@ export async function updateDeviceSampling(
     {
       method: "PATCH",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type":
+          "application/json",
       },
       body: JSON.stringify({
-        sampling_interval_seconds: samplingIntervalSeconds,
-        tracking_enabled: trackingEnabled,
+        sampling_interval_seconds:
+          samplingIntervalSeconds,
+        tracking_enabled:
+          trackingEnabled,
       }),
     },
   );
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-
     throw new Error(
-      data?.detail || "Failed to update sampling",
+      await getErrorMessage(
+        response,
+        "Failed to update sampling",
+      ),
     );
   }
 
@@ -228,7 +291,8 @@ export async function assignDeviceToZone(
     {
       method: "PATCH",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type":
+          "application/json",
       },
       body: JSON.stringify({
         zone_id: zoneId,
@@ -237,21 +301,28 @@ export async function assignDeviceToZone(
   );
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-
     throw new Error(
-      data?.detail || "Failed to assign device to zone",
+      await getErrorMessage(
+        response,
+        "Failed to assign device to zone",
+      ),
     );
   }
 
   return response.json();
 }
 
-export async function getLocations(): Promise<LocationListItem[]> {
-  const response = await fetch(`${API_BASE_URL}/api/locations`);
+export async function getLocations(): Promise<
+  LocationListItem[]
+> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/locations`,
+  );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch locations");
+    throw new Error(
+      "Failed to fetch locations",
+    );
   }
 
   return response.json();
@@ -265,7 +336,9 @@ export async function getLocationConfig(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to fetch location configuration");
+    throw new Error(
+      "Failed to fetch location configuration",
+    );
   }
 
   return response.json();
@@ -280,7 +353,8 @@ export async function createLocationConfig(
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type":
+          "application/json",
       },
       body: JSON.stringify({
         location_name: locationName,
@@ -290,10 +364,11 @@ export async function createLocationConfig(
   );
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-
     throw new Error(
-      data?.detail || "Failed to create location",
+      await getErrorMessage(
+        response,
+        "Failed to create location",
+      ),
     );
   }
 
@@ -311,10 +386,11 @@ export async function deleteLocation(
   );
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-
     throw new Error(
-      data?.detail || "Failed to delete location",
+      await getErrorMessage(
+        response,
+        "Failed to delete location",
+      ),
     );
   }
 }
@@ -328,17 +404,19 @@ export async function addZone(
     {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type":
+          "application/json",
       },
       body: JSON.stringify(zone),
     },
   );
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-
     throw new Error(
-      data?.detail || "Failed to add zone",
+      await getErrorMessage(
+        response,
+        "Failed to add zone",
+      ),
     );
   }
 
@@ -355,17 +433,19 @@ export async function updateZone(
     {
       method: "PATCH",
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type":
+          "application/json",
       },
       body: JSON.stringify(zone),
     },
   );
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-
     throw new Error(
-      data?.detail || "Failed to update zone",
+      await getErrorMessage(
+        response,
+        "Failed to update zone",
+      ),
     );
   }
 
@@ -384,10 +464,11 @@ export async function deleteZone(
   );
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-
     throw new Error(
-      data?.detail || "Failed to delete zone",
+      await getErrorMessage(
+        response,
+        "Failed to delete zone",
+      ),
     );
   }
 }
@@ -401,10 +482,82 @@ export async function getZoneDevices(
   );
 
   if (!response.ok) {
-    const data = await response.json().catch(() => null);
-
     throw new Error(
-      data?.detail || "Failed to fetch zone devices",
+      await getErrorMessage(
+        response,
+        "Failed to fetch zone devices",
+      ),
+    );
+  }
+
+  return response.json();
+}
+
+export async function getAutomationStrategy(
+  locationId: string,
+): Promise<StrategyDto> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/locations/${locationId}/automation`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(
+        response,
+        "Failed to load strategy",
+      ),
+    );
+  }
+
+  return response.json();
+}
+
+export async function saveAutomationStrategy(
+  locationId: string,
+  strategyKey: StrategyKey,
+): Promise<StrategyDto> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/locations/${locationId}/automation`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        strategy_key: strategyKey,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(
+        response,
+        "Failed to save strategy",
+      ),
+    );
+  }
+
+  return response.json();
+}
+
+export async function evaluateAutomation(
+  locationId: string,
+): Promise<AutomationEvaluationDto> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/locations/${locationId}/automation/evaluate`,
+    {
+      method: "POST",
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(
+        response,
+        "Failed to evaluate automation",
+      ),
     );
   }
 

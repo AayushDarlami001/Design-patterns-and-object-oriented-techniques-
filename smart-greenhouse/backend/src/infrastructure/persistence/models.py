@@ -75,7 +75,14 @@ class ZoneRow(Base):
     schedule: Mapped[dict] = mapped_column(
         JSONB,
         nullable=False,
+        default=dict,
         server_default=text("'{}'::jsonb"),
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
     )
 
 
@@ -96,14 +103,35 @@ class DeviceRow(Base):
     role: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
-        server_default="sensor",
+        default="sensor",
+        server_default=text("'sensor'"),
         index=True,
+    )
+
+    display_name: Mapped[str | None] = mapped_column(
+        String(128),
+        nullable=True,
+    )
+
+    default_config: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'::jsonb"),
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
     )
 
     device_family: Mapped[str] = mapped_column(
         String(32),
         nullable=False,
-        server_default="simulation",
+        default="simulation",
+        server_default=text("'simulation'"),
+        index=True,
     )
 
     zone_id: Mapped[uuid.UUID | None] = mapped_column(
@@ -123,39 +151,21 @@ class DeviceRow(Base):
             ondelete="SET NULL",
         ),
         nullable=True,
-    )
-
-    display_name: Mapped[str | None] = mapped_column(
-        String(128),
-        nullable=True,
-    )
-
-    default_config: Mapped[dict] = mapped_column(
-        JSONB,
-        nullable=False,
-        server_default=text("'{}'::jsonb"),
+        index=True,
     )
 
     sampling_interval_seconds: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
+        default=300,
         server_default=text("300"),
     )
 
     tracking_enabled: Mapped[bool] = mapped_column(
         Boolean,
         nullable=False,
+        default=True,
         server_default=text("true"),
-    )
-
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=text("now()"),
-    )
-
-    __table_args__ = (
-        Index("ix_devices_family", "device_family"),
     )
 
 
@@ -170,7 +180,10 @@ class ReadingRow(Base):
 
     device_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
-        ForeignKey("devices.id"),
+        ForeignKey(
+            "devices.id",
+            ondelete="CASCADE",
+        ),
         nullable=False,
     )
 
@@ -201,4 +214,45 @@ class ReadingRow(Base):
             "device_id",
             recorded_at.desc(),
         ),
+    )
+
+
+class AutomationRuleRow(Base):
+    __tablename__ = "automation_rules"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+
+    location_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "locations.id",
+            ondelete="CASCADE",
+        ),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    strategy_key: Mapped[str] = mapped_column(
+        String(64),
+        nullable=False,
+        default="conservative",
+        server_default=text("'conservative'"),
+    )
+
+    parameters: Mapped[dict] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'::jsonb"),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
     )

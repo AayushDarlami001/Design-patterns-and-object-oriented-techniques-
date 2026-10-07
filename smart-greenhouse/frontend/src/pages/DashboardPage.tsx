@@ -1,12 +1,7 @@
 import DeviceList from "../components/devices/DeviceList";
 import LocationConfigWizard from "../components/config/LocationConfigWizard";
+import StrategyPanel from "../features/automation/StrategyPanel";
 import SensorList from "../features/sensors/SensorList";
-
-const sections = [
-  { id: "automation", title: "Automation" },
-  { id: "controls", title: "Controls" },
-  { id: "events", title: "Events" },
-];
 
 export default function DashboardPage() {
   return (
@@ -62,21 +57,38 @@ export default function DashboardPage() {
           <LocationConfigWizard />
         </section>
 
-        {sections.map((section) => (
-          <section
-            key={section.id}
-            id={section.id}
-            className="rounded-xl border bg-white p-6 shadow-sm"
-          >
-            <h3 className="text-lg font-semibold text-gray-900">
-              {section.title}
-            </h3>
+        <section
+          id="automation"
+          className="md:col-span-2 xl:col-span-3"
+        >
+          <StrategyPanel />
+        </section>
 
-            <p className="mt-2 text-sm text-gray-500">
-              Placeholder for {section.title.toLowerCase()} functionality.
-            </p>
-          </section>
-        ))}
+        <section
+          id="controls"
+          className="rounded-xl border bg-white p-6 shadow-sm"
+        >
+          <h3 className="text-lg font-semibold text-gray-900">
+            Controls
+          </h3>
+
+          <p className="mt-2 text-sm text-gray-500">
+            Placeholder for controls functionality.
+          </p>
+        </section>
+
+        <section
+          id="events"
+          className="rounded-xl border bg-white p-6 shadow-sm"
+        >
+          <h3 className="text-lg font-semibold text-gray-900">
+            Events
+          </h3>
+
+          <p className="mt-2 text-sm text-gray-500">
+            Placeholder for events functionality.
+          </p>
+        </section>
       </div>
     </div>
   );

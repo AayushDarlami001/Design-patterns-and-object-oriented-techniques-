@@ -6,16 +6,26 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from scalar_fastapi import get_scalar_api_reference
 
-from src.application.readings.sampler import SimulationSampler
-from src.application.readings.service import ReadingIngest
+from src.application.readings.sampler import (
+    SimulationSampler,
+)
+from src.application.readings.service import (
+    ReadingIngest,
+)
 from src.infrastructure.db import SessionLocal
-from src.infrastructure.persistence.device_repository import DeviceRepository
-from src.infrastructure.persistence.reading_repository import ReadingRepository
-from src.infrastructure.settings import settings
-from src.interfaces.api.devices import router as devices_router
-from src.interfaces.api.health import router as health_router
-from src.interfaces.api.locations import router as locations_router
-from src.interfaces.api.sensors import router as sensors_router
+from src.infrastructure.persistence.device_repository import (
+    DeviceRepository,
+)
+from src.infrastructure.persistence.reading_repository import (
+    ReadingRepository,
+)
+from src.interfaces.api import (
+    automation,
+    devices,
+    health,
+    locations,
+    sensors,
+)
 
 
 async def simulation_sampler_loop():
@@ -23,22 +33,37 @@ async def simulation_sampler_loop():
         db = SessionLocal()
 
         try:
-            device_repository = DeviceRepository(db)
-            reading_repository = ReadingRepository(db)
+            device_repository = (
+                DeviceRepository(db)
+            )
+
+            reading_repository = (
+                ReadingRepository(db)
+            )
 
             ingest = ReadingIngest(
-                device_repository=device_repository,
-                reading_repository=reading_repository,
+                device_repository=(
+                    device_repository
+                ),
+                reading_repository=(
+                    reading_repository
+                ),
             )
 
             sampler = SimulationSampler(
-                device_repository=device_repository,
-                reading_repository=reading_repository,
+                device_repository=(
+                    device_repository
+                ),
+                reading_repository=(
+                    reading_repository
+                ),
                 ingest=ingest,
             )
 
             sampler.run_once(
-                datetime.now(timezone.utc)
+                datetime.now(
+                    timezone.utc
+                )
             )
 
         except asyncio.CancelledError:
@@ -46,7 +71,8 @@ async def simulation_sampler_loop():
 
         except Exception as exc:
             print(
-                f"Simulation sampler error: {exc}"
+                "Simulation sampler error: "
+                f"{exc}"
             )
 
         finally:
@@ -56,7 +82,9 @@ async def simulation_sampler_loop():
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(
+    app: FastAPI,
+):
     sampler_task = asyncio.create_task(
         simulation_sampler_loop()
     )
@@ -69,13 +97,14 @@ async def lifespan(app: FastAPI):
 
         try:
             await sampler_task
+
         except asyncio.CancelledError:
             pass
 
 
 app = FastAPI(
     title="Smart Greenhouse API",
-    description="Backend API for the Smart Greenhouse project",
+    version="0.6.0",
     docs_url=None,
     redoc_url=None,
     lifespan=lifespan,
@@ -85,9 +114,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        origin.strip()
-        for origin in settings.cors_origins.split(",")
-        if origin.strip()
+        "http://localhost:5173",
+        "http://localhost:5174",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -95,28 +123,54 @@ app.add_middleware(
 )
 
 
-app.include_router(health_router)
-app.include_router(sensors_router)
-app.include_router(devices_router)
-app.include_router(locations_router)
+app.include_router(
+    health.router
+)
+
+app.include_router(
+    sensors.router
+)
+
+app.include_router(
+    devices.router
+)
+
+app.include_router(
+    locations.router
+)
+
+app.include_router(
+    automation.router
+)
 
 
-@app.get("/", include_in_schema=False)
-def root() -> dict[str, str]:
+@app.get("/")
+def root():
     return {
-        "message": "Smart Greenhouse API",
-        "health": "/health",
-        "sensors": "/api/sensors",
-        "devices": "/api/devices",
-        "locations": "/api/locations",
-        "scalar": "/scalar",
+        "message": (
+            "Smart Greenhouse API"
+        ),
+        "api_reference": "/scalar",
         "openapi": "/openapi.json",
+        "endpoints": {
+            "health": "/health",
+            "sensors": "/api/sensors",
+            "devices": "/api/devices",
+            "locations": "/api/locations",
+            "automation": (
+                "/api/locations/"
+                "{location_id}/automation"
+            ),
+        },
     }
 
 
-@app.get("/scalar", include_in_schema=False)
-async def scalar():
+@app.get(
+    "/scalar",
+    include_in_schema=False,
+)
+def scalar_api_reference():
     return get_scalar_api_reference(
         openapi_url=app.openapi_url,
-        title=app.title,
+        title="Smart Greenhouse API",
     )
