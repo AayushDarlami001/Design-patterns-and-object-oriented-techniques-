@@ -1,5 +1,6 @@
 import DeviceList from "../components/devices/DeviceList";
 import LocationConfigWizard from "../components/config/LocationConfigWizard";
+import OverviewPanel from "../components/overview/OverviewPanel";
 import StrategyPanel from "../features/automation/StrategyPanel";
 import SensorList from "../features/sensors/SensorList";
 
@@ -13,15 +14,13 @@ export default function DashboardPage() {
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <section
           id="overview"
-          className="rounded-xl border bg-white p-6 shadow-sm"
+          className="rounded-xl border bg-white p-6 shadow-sm md:col-span-2 xl:col-span-3"
         >
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">
             Overview
           </h3>
 
-          <p className="mt-2 text-sm text-gray-500">
-            Placeholder for overview functionality.
-          </p>
+          <OverviewPanel />
         </section>
 
         <section

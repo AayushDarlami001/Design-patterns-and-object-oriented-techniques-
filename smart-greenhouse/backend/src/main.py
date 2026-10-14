@@ -24,6 +24,7 @@ from src.interfaces.api import (
     devices,
     health,
     locations,
+    overview,
     sensors,
 )
 
@@ -33,30 +34,22 @@ async def simulation_sampler_loop():
         db = SessionLocal()
 
         try:
-            device_repository = (
-                DeviceRepository(db)
+            device_repository = DeviceRepository(
+                db
             )
 
-            reading_repository = (
-                ReadingRepository(db)
+            reading_repository = ReadingRepository(
+                db
             )
 
             ingest = ReadingIngest(
-                device_repository=(
-                    device_repository
-                ),
-                reading_repository=(
-                    reading_repository
-                ),
+                device_repository=device_repository,
+                reading_repository=reading_repository,
             )
 
             sampler = SimulationSampler(
-                device_repository=(
-                    device_repository
-                ),
-                reading_repository=(
-                    reading_repository
-                ),
+                device_repository=device_repository,
+                reading_repository=reading_repository,
                 ingest=ingest,
             )
 
@@ -104,7 +97,7 @@ async def lifespan(
 
 app = FastAPI(
     title="Smart Greenhouse API",
-    version="0.6.0",
+    version="0.7.0",
     docs_url=None,
     redoc_url=None,
     lifespan=lifespan,
@@ -143,6 +136,10 @@ app.include_router(
     automation.router
 )
 
+app.include_router(
+    overview.router
+)
+
 
 @app.get("/")
 def root():
@@ -160,6 +157,10 @@ def root():
             "automation": (
                 "/api/locations/"
                 "{location_id}/automation"
+            ),
+            "overview": (
+                "/api/locations/"
+                "{location_id}/overview"
             ),
         },
     }

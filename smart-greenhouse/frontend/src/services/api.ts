@@ -85,6 +85,56 @@ export type AutomationEvaluationDto = {
   zones: ZoneRecommendationDto[];
 };
 
+export type OverviewLocationDto = {
+  id: string;
+  name: string;
+};
+
+export type OverviewDeviceCountsDto = {
+  sensor: number;
+  actuator: number;
+};
+
+export type OverviewDeviceDto = {
+  id: string;
+  device_type: string;
+  role: string;
+  display_name: string | null;
+};
+
+export type OverviewReadingDto = {
+  device_id: string;
+  value: number;
+  unit: string;
+  recorded_at: string;
+  tracking_enabled: boolean;
+  sampling_interval_seconds: number;
+};
+
+export type OverviewZoneDto = {
+  id: string;
+  name: string;
+  moisture_threshold_low: number;
+  moisture_threshold_high: number;
+  devices: OverviewDeviceDto[];
+  latest_readings: OverviewReadingDto[];
+};
+
+export type RecommendationSummaryDto = {
+  action: string;
+  reason: string;
+};
+
+export type LocationOverviewDto = {
+  location: OverviewLocationDto;
+  device_counts: OverviewDeviceCountsDto;
+  zones: OverviewZoneDto[];
+  strategy_key: string | null;
+  last_recommendation:
+    | RecommendationSummaryDto
+    | null;
+};
+
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   "http://localhost:8000";
@@ -149,7 +199,10 @@ export async function createSensor(
 
   if (!response.ok) {
     throw new Error(
-      "Failed to create sensor",
+      await getErrorMessage(
+        response,
+        "Failed to create sensor",
+      ),
     );
   }
 
@@ -180,7 +233,10 @@ export async function getDevices(
 
   if (!response.ok) {
     throw new Error(
-      "Failed to fetch devices",
+      await getErrorMessage(
+        response,
+        "Failed to fetch devices",
+      ),
     );
   }
 
@@ -199,7 +255,10 @@ export async function provisionDeviceFamily(
 
   if (!response.ok) {
     throw new Error(
-      "Failed to provision device family",
+      await getErrorMessage(
+        response,
+        "Failed to provision device family",
+      ),
     );
   }
 
@@ -321,7 +380,10 @@ export async function getLocations(): Promise<
 
   if (!response.ok) {
     throw new Error(
-      "Failed to fetch locations",
+      await getErrorMessage(
+        response,
+        "Failed to fetch locations",
+      ),
     );
   }
 
@@ -337,7 +399,10 @@ export async function getLocationConfig(
 
   if (!response.ok) {
     throw new Error(
-      "Failed to fetch location configuration",
+      await getErrorMessage(
+        response,
+        "Failed to fetch location configuration",
+      ),
     );
   }
 
@@ -557,6 +622,25 @@ export async function evaluateAutomation(
       await getErrorMessage(
         response,
         "Failed to evaluate automation",
+      ),
+    );
+  }
+
+  return response.json();
+}
+
+export async function getLocationOverview(
+  locationId: string,
+): Promise<LocationOverviewDto> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/locations/${locationId}/overview`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(
+        response,
+        "Failed to load overview",
       ),
     );
   }
