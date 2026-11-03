@@ -21,6 +21,10 @@ export type DeviceDto = {
   location_id: string | null;
   sampling_interval_seconds: number;
   tracking_enabled: boolean;
+
+  // Phase 8 — State
+  state: string | null;
+  allowed_commands: string[];
 };
 
 export type ReadingDto = {
@@ -137,7 +141,8 @@ export type LocationOverviewDto = {
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "http://localhost:8000";
+  "http://127.0.0.1:8000";
+
 
 async function getErrorMessage(
   response: Response,
@@ -149,6 +154,7 @@ async function getErrorMessage(
 
   return data?.detail || fallback;
 }
+
 
 export async function getHealth(): Promise<HealthResponse> {
   const response = await fetch(
@@ -164,6 +170,7 @@ export async function getHealth(): Promise<HealthResponse> {
   return response.json();
 }
 
+
 export async function getSensors(): Promise<Sensor[]> {
   const response = await fetch(
     `${API_BASE_URL}/api/sensors`,
@@ -177,6 +184,7 @@ export async function getSensors(): Promise<Sensor[]> {
 
   return response.json();
 }
+
 
 export async function createSensor(
   type: "moisture" | "light",
@@ -208,6 +216,7 @@ export async function createSensor(
 
   return response.json();
 }
+
 
 export async function getDevices(
   family?: string,
@@ -243,6 +252,7 @@ export async function getDevices(
   return response.json();
 }
 
+
 export async function provisionDeviceFamily(
   family: "simulation" | "edge",
 ): Promise<DeviceDto[]> {
@@ -264,6 +274,7 @@ export async function provisionDeviceFamily(
 
   return response.json();
 }
+
 
 export async function readSensor(
   deviceId: string,
@@ -287,6 +298,7 @@ export async function readSensor(
   return response.json();
 }
 
+
 export async function getSensorReadings(
   deviceId: string,
   limit = 20,
@@ -306,6 +318,7 @@ export async function getSensorReadings(
 
   return response.json();
 }
+
 
 export async function updateDeviceSampling(
   deviceId: string,
@@ -341,6 +354,7 @@ export async function updateDeviceSampling(
   return response.json();
 }
 
+
 export async function assignDeviceToZone(
   deviceId: string,
   zoneId: string | null,
@@ -371,6 +385,7 @@ export async function assignDeviceToZone(
   return response.json();
 }
 
+
 export async function getLocations(): Promise<
   LocationListItem[]
 > {
@@ -390,6 +405,7 @@ export async function getLocations(): Promise<
   return response.json();
 }
 
+
 export async function getLocationConfig(
   locationId: string,
 ): Promise<LocationConfigResponse> {
@@ -408,6 +424,7 @@ export async function getLocationConfig(
 
   return response.json();
 }
+
 
 export async function createLocationConfig(
   locationName: string,
@@ -440,6 +457,7 @@ export async function createLocationConfig(
   return response.json();
 }
 
+
 export async function deleteLocation(
   locationId: string,
 ): Promise<void> {
@@ -459,6 +477,7 @@ export async function deleteLocation(
     );
   }
 }
+
 
 export async function addZone(
   locationId: string,
@@ -487,6 +506,7 @@ export async function addZone(
 
   return response.json();
 }
+
 
 export async function updateZone(
   locationId: string,
@@ -517,6 +537,7 @@ export async function updateZone(
   return response.json();
 }
 
+
 export async function deleteZone(
   locationId: string,
   zoneId: string,
@@ -538,6 +559,7 @@ export async function deleteZone(
   }
 }
 
+
 export async function getZoneDevices(
   locationId: string,
   zoneId: string,
@@ -558,6 +580,7 @@ export async function getZoneDevices(
   return response.json();
 }
 
+
 export async function getAutomationStrategy(
   locationId: string,
 ): Promise<StrategyDto> {
@@ -576,6 +599,7 @@ export async function getAutomationStrategy(
 
   return response.json();
 }
+
 
 export async function saveAutomationStrategy(
   locationId: string,
@@ -607,6 +631,7 @@ export async function saveAutomationStrategy(
   return response.json();
 }
 
+
 export async function evaluateAutomation(
   locationId: string,
 ): Promise<AutomationEvaluationDto> {
@@ -628,6 +653,7 @@ export async function evaluateAutomation(
 
   return response.json();
 }
+
 
 export async function getLocationOverview(
   locationId: string,

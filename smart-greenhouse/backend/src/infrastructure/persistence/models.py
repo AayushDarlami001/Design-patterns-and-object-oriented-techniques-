@@ -256,3 +256,29 @@ class AutomationRuleRow(Base):
         nullable=False,
         server_default=text("now()"),
     )
+
+
+class ActuatorStateRow(Base):
+    __tablename__ = "actuator_states"
+
+    device_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            "devices.id",
+            ondelete="CASCADE",
+        ),
+        primary_key=True,
+    )
+
+    state: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="idle",
+        server_default=text("'idle'"),
+    )
+
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=text("now()"),
+    )

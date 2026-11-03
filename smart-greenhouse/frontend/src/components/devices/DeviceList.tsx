@@ -30,14 +30,17 @@ export default function DeviceList() {
   const [zoneOptions, setZoneOptions] =
     useState<ZoneOption[]>([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
+
   const [provisioning, setProvisioning] =
     useState(false);
 
   const [assigningId, setAssigningId] =
     useState<string | null>(null);
 
-  const [error, setError] = useState("");
+  const [error, setError] =
+    useState("");
 
   async function loadDevices(
     selectedFamily: DeviceFamily,
@@ -60,21 +63,28 @@ export default function DeviceList() {
 
   async function loadZoneOptions() {
     try {
-      const locations = await getLocations();
+      const locations =
+        await getLocations();
 
-      const configs = await Promise.all(
-        locations.map((location) =>
-          getLocationConfig(location.id),
-        ),
-      );
+      const configs =
+        await Promise.all(
+          locations.map((location) =>
+            getLocationConfig(
+              location.id,
+            ),
+          ),
+        );
 
-      const options: ZoneOption[] = [];
+      const options: ZoneOption[] =
+        [];
 
       for (const config of configs) {
         for (const zone of config.zones) {
           options.push({
-            locationId: config.location.id,
-            locationName: config.location.name,
+            locationId:
+              config.location.id,
+            locationName:
+              config.location.name,
             zoneId: zone.id,
             zoneName: zone.name,
           });
@@ -100,7 +110,9 @@ export default function DeviceList() {
       setProvisioning(true);
       setError("");
 
-      await provisionDeviceFamily(family);
+      await provisionDeviceFamily(
+        family,
+      );
 
       await loadDevices(family);
     } catch {
@@ -147,7 +159,8 @@ export default function DeviceList() {
 
     const zone = zoneOptions.find(
       (option) =>
-        option.zoneId === device.zone_id,
+        option.zoneId ===
+        device.zone_id,
     );
 
     if (!zone) {
@@ -157,14 +170,17 @@ export default function DeviceList() {
     return `${zone.locationName} — ${zone.zoneName}`;
   }
 
-  const locationGroups = Array.from(
-    new Map(
-      zoneOptions.map((option) => [
-        option.locationId,
-        option.locationName,
-      ]),
-    ),
-  );
+  const locationGroups =
+    Array.from(
+      new Map(
+        zoneOptions.map(
+          (option) => [
+            option.locationId,
+            option.locationName,
+          ],
+        ),
+      ),
+    );
 
   return (
     <div className="space-y-4">
@@ -223,7 +239,7 @@ export default function DeviceList() {
                 </p>
               </div>
 
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <span className="rounded bg-gray-100 px-2 py-1 text-xs">
                   {device.device_family}
                 </span>
@@ -237,8 +253,58 @@ export default function DeviceList() {
                 >
                   {device.role}
                 </span>
+
+                {device.role ===
+                  "actuator" && (
+                  <span
+                    className="rounded bg-blue-100 px-2 py-1 text-xs font-semibold uppercase text-blue-700"
+                    title={`Current actuator state: ${
+                      device.state ??
+                      "unknown"
+                    }`}
+                  >
+                    {device.state ??
+                      "unknown"}
+                  </span>
+                )}
               </div>
             </div>
+
+            {device.role ===
+              "actuator" && (
+              <div className="mt-3 rounded bg-gray-50 p-3">
+                <p className="text-xs font-medium text-gray-600">
+                  Allowed commands
+                </p>
+
+                {device.allowed_commands
+                  .length > 0 ? (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {device.allowed_commands.map(
+                      (command) => (
+                        <span
+                          key={
+                            command
+                          }
+                          className="rounded bg-white px-2 py-1 text-xs text-gray-600 ring-1 ring-gray-200"
+                          title={`Allowed while state is ${
+                            device.state ??
+                            "unknown"
+                          }`}
+                        >
+                          {command}
+                        </span>
+                      ),
+                    )}
+                  </div>
+                ) : (
+                  <p className="mt-1 text-xs text-gray-500">
+                    No commands
+                    available.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div className="mt-3">
               <label className="mb-1 block text-xs font-medium text-gray-600">
@@ -246,14 +312,19 @@ export default function DeviceList() {
               </label>
 
               <select
-                value={device.zone_id ?? ""}
+                value={
+                  device.zone_id ??
+                  ""
+                }
                 disabled={
-                  assigningId === device.id
+                  assigningId ===
+                  device.id
                 }
                 onChange={(event) =>
                   handleZoneChange(
                     device.id,
-                    event.target.value,
+                    event.target
+                      .value,
                   )
                 }
                 className="w-full rounded border px-3 py-2 text-sm"
@@ -263,35 +334,60 @@ export default function DeviceList() {
                 </option>
 
                 {locationGroups.map(
-                  ([locationId, locationName]) => (
+                  ([
+                    locationId,
+                    locationName,
+                  ]) => (
                     <optgroup
-                      key={locationId}
-                      label={locationName}
+                      key={
+                        locationId
+                      }
+                      label={
+                        locationName
+                      }
                     >
                       {zoneOptions
                         .filter(
-                          (option) =>
+                          (
+                            option,
+                          ) =>
                             option.locationId ===
                             locationId,
                         )
-                        .map((option) => (
-                          <option
-                            key={option.zoneId}
-                            value={option.zoneId}
-                          >
-                            {option.locationName} —{" "}
-                            {option.zoneName}
-                          </option>
-                        ))}
+                        .map(
+                          (
+                            option,
+                          ) => (
+                            <option
+                              key={
+                                option.zoneId
+                              }
+                              value={
+                                option.zoneId
+                              }
+                            >
+                              {
+                                option.locationName
+                              }{" "}
+                              —{" "}
+                              {
+                                option.zoneName
+                              }
+                            </option>
+                          ),
+                        )}
                     </optgroup>
                   ),
                 )}
               </select>
 
               <p className="mt-1 text-xs text-gray-500">
-                {assigningId === device.id
+                {assigningId ===
+                device.id
                   ? "Updating..."
-                  : currentZoneLabel(device)}
+                  : currentZoneLabel(
+                      device,
+                    )}
               </p>
             </div>
           </div>

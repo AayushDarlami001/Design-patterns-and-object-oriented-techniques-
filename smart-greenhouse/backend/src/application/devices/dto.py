@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DeviceDto(BaseModel):
@@ -14,6 +14,13 @@ class DeviceDto(BaseModel):
     location_id: UUID | None = None
     sampling_interval_seconds: int = 300
     tracking_enabled: bool = True
+
+    # Phase 8 — State
+    state: str | None = None
+
+    allowed_commands: list[str] = Field(
+        default_factory=list
+    )
 
 
 class DeviceSamplingUpdateRequest(BaseModel):

@@ -6,20 +6,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from scalar_fastapi import get_scalar_api_reference
 
-from src.application.readings.sampler import (
-    SimulationSampler,
-)
-from src.application.readings.service import (
-    ReadingIngest,
-)
+from src.application.readings.sampler import SimulationSampler
+from src.application.readings.service import ReadingIngest
 from src.infrastructure.db import SessionLocal
-from src.infrastructure.persistence.device_repository import (
-    DeviceRepository,
-)
-from src.infrastructure.persistence.reading_repository import (
-    ReadingRepository,
-)
+from src.infrastructure.persistence.device_repository import DeviceRepository
+from src.infrastructure.persistence.reading_repository import ReadingRepository
 from src.interfaces.api import (
+    actuator_states,
     automation,
     devices,
     health,
@@ -34,13 +27,8 @@ async def simulation_sampler_loop():
         db = SessionLocal()
 
         try:
-            device_repository = DeviceRepository(
-                db
-            )
-
-            reading_repository = ReadingRepository(
-                db
-            )
+            device_repository = DeviceRepository(db)
+            reading_repository = ReadingRepository(db)
 
             ingest = ReadingIngest(
                 device_repository=device_repository,
@@ -54,9 +42,7 @@ async def simulation_sampler_loop():
             )
 
             sampler.run_once(
-                datetime.now(
-                    timezone.utc
-                )
+                datetime.now(timezone.utc)
             )
 
         except asyncio.CancelledError:
@@ -75,9 +61,7 @@ async def simulation_sampler_loop():
 
 
 @asynccontextmanager
-async def lifespan(
-    app: FastAPI,
-):
+async def lifespan(app: FastAPI):
     sampler_task = asyncio.create_task(
         simulation_sampler_loop()
     )
@@ -97,7 +81,7 @@ async def lifespan(
 
 app = FastAPI(
     title="Smart Greenhouse API",
-    version="0.7.0",
+    version="0.8.0",
     docs_url=None,
     redoc_url=None,
     lifespan=lifespan,
@@ -109,6 +93,8 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",
         "http://localhost:5174",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:5174",
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -140,13 +126,15 @@ app.include_router(
     overview.router
 )
 
+app.include_router(
+    actuator_states.router
+)
+
 
 @app.get("/")
 def root():
     return {
-        "message": (
-            "Smart Greenhouse API"
-        ),
+        "message": "Smart Greenhouse API",
         "api_reference": "/scalar",
         "openapi": "/openapi.json",
         "endpoints": {
@@ -161,6 +149,14 @@ def root():
             "overview": (
                 "/api/locations/"
                 "{location_id}/overview"
+            ),
+            "actuator_state": (
+                "/api/devices/"
+                "{device_id}/state"
+            ),
+            "actuator_transition": (
+                "/api/devices/"
+                "{device_id}/transition"
             ),
         },
     }

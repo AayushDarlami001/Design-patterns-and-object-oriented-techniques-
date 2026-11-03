@@ -2,12 +2,11 @@ from src.application.devices.dto import DeviceDto
 from src.domain.devices.entity import Device
 
 
-def device_to_dto(device: Device) -> DeviceDto:
-    if device.id is None:
-        raise ValueError(
-            "Device must be saved before converting to DTO"
-        )
-
+def device_to_dto(
+    device: Device,
+    state: str | None = None,
+    allowed_commands: list[str] | None = None,
+) -> DeviceDto:
     return DeviceDto(
         id=device.id,
         device_type=device.device_type,
@@ -17,8 +16,18 @@ def device_to_dto(device: Device) -> DeviceDto:
         default_config=device.default_config,
         zone_id=device.zone_id,
         location_id=device.location_id,
-        sampling_interval_seconds=device.sampling_interval_seconds,
+        sampling_interval_seconds=(
+            device.sampling_interval_seconds
+        ),
         tracking_enabled=device.tracking_enabled,
+
+        # Phase 8
+        state=state,
+        allowed_commands=(
+            allowed_commands
+            if allowed_commands is not None
+            else []
+        ),
     )
 
 
