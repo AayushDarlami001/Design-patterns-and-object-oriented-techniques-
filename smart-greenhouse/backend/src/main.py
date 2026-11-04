@@ -13,6 +13,7 @@ from src.infrastructure.persistence.device_repository import DeviceRepository
 from src.infrastructure.persistence.reading_repository import ReadingRepository
 from src.interfaces.api import (
     actuator_states,
+    actuators,
     automation,
     devices,
     health,
@@ -81,7 +82,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Smart Greenhouse API",
-    version="0.8.0",
+    version="0.9.0",
     docs_url=None,
     redoc_url=None,
     lifespan=lifespan,
@@ -130,6 +131,10 @@ app.include_router(
     actuator_states.router
 )
 
+app.include_router(
+    actuators.router
+)
+
 
 @app.get("/")
 def root():
@@ -157,6 +162,13 @@ def root():
             "actuator_transition": (
                 "/api/devices/"
                 "{device_id}/transition"
+            ),
+            "actuator_executions": (
+                "/api/actuators/executions"
+            ),
+            "actuator_apply": (
+                "/api/actuators/"
+                "{device_id}/apply"
             ),
         },
     }

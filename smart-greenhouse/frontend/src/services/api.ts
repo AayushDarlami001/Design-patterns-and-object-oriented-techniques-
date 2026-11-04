@@ -3,12 +3,14 @@ export type HealthResponse = {
   db: "ok" | "fail";
 };
 
+
 export type Sensor = {
   id: string;
   device_type: string;
   display_name: string;
   default_config: Record<string, unknown>;
 };
+
 
 export type DeviceDto = {
   id: string;
@@ -27,6 +29,18 @@ export type DeviceDto = {
   allowed_commands: string[];
 };
 
+
+// Phase 9 — Decorator execution log
+export type ActuatorExecutionDto = {
+  id: string;
+  device_id: string;
+  success: boolean;
+  policy_applied: string[];
+  message: string | null;
+  created_at: string;
+};
+
+
 export type ReadingDto = {
   device_id: string;
   value: number;
@@ -34,6 +48,7 @@ export type ReadingDto = {
   source: string;
   recorded_at: string;
 };
+
 
 export type ZoneDto = {
   id: string;
@@ -44,10 +59,12 @@ export type ZoneDto = {
   schedule: Record<string, unknown>;
 };
 
+
 export type LocationListItem = {
   id: string;
   name: string;
 };
+
 
 export type LocationConfigResponse = {
   location: {
@@ -57,6 +74,7 @@ export type LocationConfigResponse = {
   zones: ZoneDto[];
 };
 
+
 export type ZoneInput = {
   name: string;
   moisture_threshold_low: number;
@@ -64,14 +82,17 @@ export type ZoneInput = {
   schedule?: Record<string, unknown>;
 };
 
+
 export type StrategyKey =
   | "conservative"
   | "aggressive";
+
 
 export type StrategyDto = {
   location_id: string;
   strategy_key: StrategyKey;
 };
+
 
 export type ZoneRecommendationDto = {
   zone_id: string;
@@ -81,6 +102,7 @@ export type ZoneRecommendationDto = {
   score: number | null;
 };
 
+
 export type AutomationEvaluationDto = {
   location_id: string;
   strategy_key: StrategyKey;
@@ -89,15 +111,18 @@ export type AutomationEvaluationDto = {
   zones: ZoneRecommendationDto[];
 };
 
+
 export type OverviewLocationDto = {
   id: string;
   name: string;
 };
 
+
 export type OverviewDeviceCountsDto = {
   sensor: number;
   actuator: number;
 };
+
 
 export type OverviewDeviceDto = {
   id: string;
@@ -105,6 +130,7 @@ export type OverviewDeviceDto = {
   role: string;
   display_name: string | null;
 };
+
 
 export type OverviewReadingDto = {
   device_id: string;
@@ -115,6 +141,7 @@ export type OverviewReadingDto = {
   sampling_interval_seconds: number;
 };
 
+
 export type OverviewZoneDto = {
   id: string;
   name: string;
@@ -124,10 +151,12 @@ export type OverviewZoneDto = {
   latest_readings: OverviewReadingDto[];
 };
 
+
 export type RecommendationSummaryDto = {
   action: string;
   reason: string;
 };
+
 
 export type LocationOverviewDto = {
   location: OverviewLocationDto;
@@ -138,6 +167,7 @@ export type LocationOverviewDto = {
     | RecommendationSummaryDto
     | null;
 };
+
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
@@ -222,17 +252,25 @@ export async function getDevices(
   family?: string,
   role?: string,
 ): Promise<DeviceDto[]> {
-  const params = new URLSearchParams();
+  const params =
+    new URLSearchParams();
 
   if (family) {
-    params.set("family", family);
+    params.set(
+      "family",
+      family,
+    );
   }
 
   if (role) {
-    params.set("role", role);
+    params.set(
+      "role",
+      role,
+    );
   }
 
-  const query = params.toString();
+  const query =
+    params.toString();
 
   const response = await fetch(
     `${API_BASE_URL}/api/devices${
@@ -439,7 +477,8 @@ export async function createLocationConfig(
           "application/json",
       },
       body: JSON.stringify({
-        location_name: locationName,
+        location_name:
+          locationName,
         zones,
       }),
     },
@@ -491,7 +530,9 @@ export async function addZone(
         "Content-Type":
           "application/json",
       },
-      body: JSON.stringify(zone),
+      body: JSON.stringify(
+        zone,
+      ),
     },
   );
 
@@ -521,7 +562,9 @@ export async function updateZone(
         "Content-Type":
           "application/json",
       },
-      body: JSON.stringify(zone),
+      body: JSON.stringify(
+        zone,
+      ),
     },
   );
 
@@ -614,7 +657,8 @@ export async function saveAutomationStrategy(
           "application/json",
       },
       body: JSON.stringify({
-        strategy_key: strategyKey,
+        strategy_key:
+          strategyKey,
       }),
     },
   );
@@ -667,6 +711,27 @@ export async function getLocationOverview(
       await getErrorMessage(
         response,
         "Failed to load overview",
+      ),
+    );
+  }
+
+  return response.json();
+}
+
+
+// Phase 9 — Decorator
+export async function getActuatorExecutions(
+  limit = 20,
+): Promise<ActuatorExecutionDto[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/actuators/executions?limit=${limit}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(
+        response,
+        "Failed to load actuator executions",
       ),
     );
   }
