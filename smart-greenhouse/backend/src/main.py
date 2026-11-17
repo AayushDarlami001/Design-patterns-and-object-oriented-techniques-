@@ -3,18 +3,33 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from scalar_fastapi import get_scalar_api_reference
+from fastapi.middleware.cors import (
+    CORSMiddleware,
+)
+from scalar_fastapi import (
+    get_scalar_api_reference,
+)
 
-from src.application.readings.sampler import SimulationSampler
-from src.application.readings.service import ReadingIngest
-from src.infrastructure.db import SessionLocal
-from src.infrastructure.persistence.device_repository import DeviceRepository
-from src.infrastructure.persistence.reading_repository import ReadingRepository
+from src.application.readings.sampler import (
+    SimulationSampler,
+)
+from src.application.readings.service import (
+    ReadingIngest,
+)
+from src.infrastructure.db import (
+    SessionLocal,
+)
+from src.infrastructure.persistence.device_repository import (
+    DeviceRepository,
+)
+from src.infrastructure.persistence.reading_repository import (
+    ReadingRepository,
+)
 from src.interfaces.api import (
     actuator_states,
     actuators,
     automation,
+    commands,
     devices,
     health,
     locations,
@@ -28,22 +43,37 @@ async def simulation_sampler_loop():
         db = SessionLocal()
 
         try:
-            device_repository = DeviceRepository(db)
-            reading_repository = ReadingRepository(db)
+            device_repository = (
+                DeviceRepository(db)
+            )
+
+            reading_repository = (
+                ReadingRepository(db)
+            )
 
             ingest = ReadingIngest(
-                device_repository=device_repository,
-                reading_repository=reading_repository,
+                device_repository=(
+                    device_repository
+                ),
+                reading_repository=(
+                    reading_repository
+                ),
             )
 
             sampler = SimulationSampler(
-                device_repository=device_repository,
-                reading_repository=reading_repository,
+                device_repository=(
+                    device_repository
+                ),
+                reading_repository=(
+                    reading_repository
+                ),
                 ingest=ingest,
             )
 
             sampler.run_once(
-                datetime.now(timezone.utc)
+                datetime.now(
+                    timezone.utc
+                )
             )
 
         except asyncio.CancelledError:
@@ -62,7 +92,9 @@ async def simulation_sampler_loop():
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan(
+    app: FastAPI,
+):
     sampler_task = asyncio.create_task(
         simulation_sampler_loop()
     )
@@ -82,7 +114,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Smart Greenhouse API",
-    version="0.9.0",
+    version="0.10.0",
     docs_url=None,
     redoc_url=None,
     lifespan=lifespan,
@@ -135,41 +167,72 @@ app.include_router(
     actuators.router
 )
 
+# Phase 10 — Command
+app.include_router(
+    commands.router
+)
+
 
 @app.get("/")
 def root():
     return {
-        "message": "Smart Greenhouse API",
-        "api_reference": "/scalar",
-        "openapi": "/openapi.json",
+        "message":
+            "Smart Greenhouse API",
+
+        "api_reference":
+            "/scalar",
+
+        "openapi":
+            "/openapi.json",
+
         "endpoints": {
-            "health": "/health",
-            "sensors": "/api/sensors",
-            "devices": "/api/devices",
-            "locations": "/api/locations",
-            "automation": (
-                "/api/locations/"
-                "{location_id}/automation"
-            ),
-            "overview": (
-                "/api/locations/"
-                "{location_id}/overview"
-            ),
-            "actuator_state": (
-                "/api/devices/"
-                "{device_id}/state"
-            ),
-            "actuator_transition": (
-                "/api/devices/"
-                "{device_id}/transition"
-            ),
-            "actuator_executions": (
-                "/api/actuators/executions"
-            ),
-            "actuator_apply": (
-                "/api/actuators/"
-                "{device_id}/apply"
-            ),
+            "health":
+                "/health",
+
+            "sensors":
+                "/api/sensors",
+
+            "devices":
+                "/api/devices",
+
+            "locations":
+                "/api/locations",
+
+            "automation":
+                (
+                    "/api/locations/"
+                    "{location_id}/automation"
+                ),
+
+            "overview":
+                (
+                    "/api/locations/"
+                    "{location_id}/overview"
+                ),
+
+            "actuator_state":
+                (
+                    "/api/devices/"
+                    "{device_id}/state"
+                ),
+
+            "actuator_transition":
+                (
+                    "/api/devices/"
+                    "{device_id}/transition"
+                ),
+
+            "actuator_executions":
+                "/api/actuators/executions",
+
+            "actuator_apply":
+                (
+                    "/api/actuators/"
+                    "{device_id}/apply"
+                ),
+
+            "commands":
+                "/api/commands",
         },
     }
 

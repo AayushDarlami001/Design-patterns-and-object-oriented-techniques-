@@ -41,6 +41,18 @@ export type ActuatorExecutionDto = {
 };
 
 
+// Phase 10 — Command
+export type CommandLogDto = {
+  id: string;
+  command_type: string;
+  device_id: string;
+  payload: Record<string, unknown>;
+  status: "success" | "failed" | "rejected";
+  error_message: string | null;
+  created_at: string;
+};
+
+
 export type ReadingDto = {
   device_id: string;
   value: number;
@@ -732,6 +744,73 @@ export async function getActuatorExecutions(
       await getErrorMessage(
         response,
         "Failed to load actuator executions",
+      ),
+    );
+  }
+
+  return response.json();
+}
+
+
+// Phase 10 — Command
+export async function executeCommand(
+  commandType: string,
+  deviceId: string,
+  payload: Record<string, unknown> = {},
+): Promise<CommandLogDto> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/commands`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+      },
+      body: JSON.stringify({
+        command_type: commandType,
+        device_id: deviceId,
+        payload,
+      }),
+    },
+  );
+
+  const data = await response
+    .json()
+    .catch(() => null);
+
+  // Rejected commands return HTTP 409,
+  // but the body is still the
+  // persisted command_log row.
+  if (
+    response.status === 409 &&
+    data
+  ) {
+    return data as CommandLogDto;
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      data?.detail ||
+        "Failed to execute command",
+    );
+  }
+
+  return data as CommandLogDto;
+}
+
+
+export async function getCommandHistory(
+  limit = 50,
+): Promise<CommandLogDto[]> {
+  const response = await fetch(
+    `${API_BASE_URL}/api/commands?limit=${limit}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(
+        response,
+        "Failed to load command history",
       ),
     );
   }

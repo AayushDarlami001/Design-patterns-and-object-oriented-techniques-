@@ -11,25 +11,35 @@ VALID_STATES = {
 }
 
 
-TRANSITIONS: dict[str, dict[str, str]] = {
+TRANSITIONS = {
     "off": {
         "power_on": "idle",
         "enter_maintenance": "maintenance",
         "fault": "error",
     },
+
     "idle": {
         "start_pump": "running",
         "power_off": "off",
         "enter_maintenance": "maintenance",
         "fault": "error",
     },
+
     "running": {
         "stop_pump": "idle",
+
+        # Phase 10:
+        # Changing the light level is allowed while
+        # the actuator remains in the running state.
+        "set_light_level": "running",
+
         "fault": "error",
     },
+
     "error": {
         "reset": "idle",
     },
+
     "maintenance": {
         "exit_maintenance": "idle",
         "fault": "error",
@@ -37,7 +47,9 @@ TRANSITIONS: dict[str, dict[str, str]] = {
 }
 
 
-def get_allowed_commands(state: str) -> list[str]:
+def get_allowed_commands(
+    state: str,
+) -> list[str]:
     if state not in VALID_STATES:
         raise ValueError(
             f"Unknown actuator state: {state}"
@@ -62,9 +74,9 @@ def transition_state(
             f"Unknown target state: {target_state}"
         )
 
-    allowed_targets = TRANSITIONS[
-        current_state
-    ].values()
+    allowed_targets = (
+        TRANSITIONS[current_state].values()
+    )
 
     if target_state not in allowed_targets:
         raise IllegalTransitionError(

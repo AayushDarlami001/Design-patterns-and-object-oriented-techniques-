@@ -2,6 +2,7 @@ import DeviceList from "../components/devices/DeviceList";
 import LocationConfigWizard from "../components/config/LocationConfigWizard";
 import OverviewPanel from "../components/overview/OverviewPanel";
 import ExecutionLog from "../components/ExecutionLog";
+import CommandPanel from "../components/commands/CommandPanel";
 import StrategyPanel from "../features/automation/StrategyPanel";
 import SensorList from "../features/sensors/SensorList";
 
@@ -68,7 +69,11 @@ export default function DashboardPage() {
           id="controls"
           className="rounded-xl border bg-white p-6 shadow-sm md:col-span-2 xl:col-span-3"
         >
-          <ExecutionLog />
+          <CommandPanel />
+
+          <div className="mt-10 border-t pt-8">
+            <ExecutionLog />
+          </div>
         </section>
 
         <section

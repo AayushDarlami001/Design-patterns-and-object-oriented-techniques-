@@ -53,6 +53,7 @@ def test_running_allowed_commands():
 
     assert commands == [
         "stop_pump",
+        "set_light_level",
         "fault",
     ]
 
