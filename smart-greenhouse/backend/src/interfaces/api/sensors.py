@@ -11,6 +11,9 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from src.application.readings.dto import ReadingDto
+from src.application.readings.factory import (
+    build_reading_ingest,
+)
 from src.application.readings.service import ReadingIngest
 from src.application.sensors.service import SensorService
 from src.infrastructure.db import get_db
@@ -111,16 +114,17 @@ def read_sensor(
     device_id: UUID,
     db: Session = Depends(get_db),
 ) -> ReadingDto:
-    device_repository = DeviceRepository(db)
-    reading_repository = ReadingRepository(db)
-
-    service = ReadingIngest(
-        device_repository=device_repository,
-        reading_repository=reading_repository,
+    # Phase 11 — Observer
+    # Use the factory so manual reads
+    # publish ReadingCreated events.
+    service = build_reading_ingest(
+        db
     )
 
     try:
-        return service.record(device_id)
+        return service.record(
+            device_id
+        )
 
     except LookupError as exc:
         raise HTTPException(
@@ -148,8 +152,13 @@ def list_sensor_readings(
     ),
     db: Session = Depends(get_db),
 ) -> list[ReadingDto]:
-    device_repository = DeviceRepository(db)
-    reading_repository = ReadingRepository(db)
+    device_repository = DeviceRepository(
+        db
+    )
+
+    reading_repository = ReadingRepository(
+        db
+    )
 
     service = ReadingIngest(
         device_repository=device_repository,

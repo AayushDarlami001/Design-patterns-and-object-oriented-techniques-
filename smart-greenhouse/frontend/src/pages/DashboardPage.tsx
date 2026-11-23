@@ -3,6 +3,7 @@ import LocationConfigWizard from "../components/config/LocationConfigWizard";
 import OverviewPanel from "../components/overview/OverviewPanel";
 import ExecutionLog from "../components/ExecutionLog";
 import CommandPanel from "../components/commands/CommandPanel";
+import EventFeed from "../components/alerts/EventFeed";
 import StrategyPanel from "../features/automation/StrategyPanel";
 import SensorList from "../features/sensors/SensorList";
 
@@ -80,13 +81,7 @@ export default function DashboardPage() {
           id="events"
           className="rounded-xl border bg-white p-6 shadow-sm md:col-span-2 xl:col-span-3"
         >
-          <h3 className="text-lg font-semibold text-gray-900">
-            Events
-          </h3>
-
-          <p className="mt-2 text-sm text-gray-500">
-            Placeholder for events functionality.
-          </p>
+          <EventFeed />
         </section>
       </div>
     </div>

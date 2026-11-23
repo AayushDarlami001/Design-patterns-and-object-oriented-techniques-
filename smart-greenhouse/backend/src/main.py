@@ -10,11 +10,11 @@ from scalar_fastapi import (
     get_scalar_api_reference,
 )
 
+from src.application.readings.factory import (
+    build_reading_ingest,
+)
 from src.application.readings.sampler import (
     SimulationSampler,
-)
-from src.application.readings.service import (
-    ReadingIngest,
 )
 from src.infrastructure.db import (
     SessionLocal,
@@ -28,6 +28,7 @@ from src.infrastructure.persistence.reading_repository import (
 from src.interfaces.api import (
     actuator_states,
     actuators,
+    alerts,
     automation,
     commands,
     devices,
@@ -51,13 +52,11 @@ async def simulation_sampler_loop():
                 ReadingRepository(db)
             )
 
-            ingest = ReadingIngest(
-                device_repository=(
-                    device_repository
-                ),
-                reading_repository=(
-                    reading_repository
-                ),
+            # Phase 11 — Observer
+            # Use the configured ReadingIngest
+            # so sampler readings publish events.
+            ingest = build_reading_ingest(
+                db
             )
 
             sampler = SimulationSampler(
@@ -114,7 +113,7 @@ async def lifespan(
 
 app = FastAPI(
     title="Smart Greenhouse API",
-    version="0.10.0",
+    version="0.11.0",
     docs_url=None,
     redoc_url=None,
     lifespan=lifespan,
@@ -170,6 +169,11 @@ app.include_router(
 # Phase 10 — Command
 app.include_router(
     commands.router
+)
+
+# Phase 11 — Observer alerts
+app.include_router(
+    alerts.router
 )
 
 
@@ -233,6 +237,9 @@ def root():
 
             "commands":
                 "/api/commands",
+
+            "alerts":
+                "/api/alerts",
         },
     }
 

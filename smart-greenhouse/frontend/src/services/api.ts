@@ -53,6 +53,20 @@ export type CommandLogDto = {
 };
 
 
+// Phase 11 — Observer alerts
+export type AlertDto = {
+  id: string;
+  location_id: string | null;
+  zone_id: string | null;
+  device_id: string | null;
+  severity: "info" | "warning" | "critical";
+  message: string;
+  event_type: string;
+  status: "active" | "resolved";
+  created_at: string;
+};
+
+
 export type ReadingDto = {
   device_id: string;
   value: number;
@@ -811,6 +825,66 @@ export async function getCommandHistory(
       await getErrorMessage(
         response,
         "Failed to load command history",
+      ),
+    );
+  }
+
+  return response.json();
+}
+
+
+// Phase 11 — Observer alerts
+export async function getAlerts(
+  options: {
+    status?: "active" | "resolved" | "all";
+    locationId?: string;
+    zoneId?: string;
+    since?: string;
+    limit?: number;
+  } = {},
+): Promise<AlertDto[]> {
+  const params = new URLSearchParams();
+
+  params.set(
+    "status",
+    options.status ?? "active",
+  );
+
+  params.set(
+    "limit",
+    String(options.limit ?? 50),
+  );
+
+  if (options.locationId) {
+    params.set(
+      "location_id",
+      options.locationId,
+    );
+  }
+
+  if (options.zoneId) {
+    params.set(
+      "zone_id",
+      options.zoneId,
+    );
+  }
+
+  if (options.since) {
+    params.set(
+      "since",
+      options.since,
+    );
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/api/alerts?${params.toString()}`,
+  );
+
+  if (!response.ok) {
+    throw new Error(
+      await getErrorMessage(
+        response,
+        "Failed to load alerts",
       ),
     );
   }

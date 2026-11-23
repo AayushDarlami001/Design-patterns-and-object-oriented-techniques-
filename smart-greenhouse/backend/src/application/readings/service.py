@@ -1,6 +1,8 @@
 from uuid import UUID
 
 from src.application.readings.dto import ReadingDto
+from src.domain.events.bus import EventBus
+from src.domain.events.events import ReadingCreated
 from src.domain.sensors.reading import Reading
 from src.infrastructure.adapters.sensors.selector import (
     select_sensor_adapter,
@@ -18,9 +20,11 @@ class ReadingIngest:
         self,
         device_repository: DeviceRepository,
         reading_repository: ReadingRepository,
+        event_bus: EventBus | None = None,
     ):
         self.device_repository = device_repository
         self.reading_repository = reading_repository
+        self.event_bus = event_bus
 
     def record(
         self,
@@ -63,9 +67,35 @@ class ReadingIngest:
 
             reading = translated_reading
 
+        # Persist first.
         saved = self.reading_repository.add(
             reading
         )
+
+        # Phase 11 — Observer
+        #
+        # A successful ingest publishes
+        # reading.created only when tracking
+        # is enabled for the device.
+        #
+        # location_id and zone_id come from
+        # the device. Unassigned devices keep
+        # these values as None.
+        if (
+            self.event_bus is not None
+            and device.tracking_enabled
+        ):
+            self.event_bus.publish(
+                ReadingCreated(
+                    device_id=device.id,
+                    location_id=device.location_id,
+                    zone_id=device.zone_id,
+                    value=float(saved.value),
+                    unit=saved.unit,
+                    source=saved.source,
+                    recorded_at=saved.recorded_at,
+                )
+            )
 
         return self._to_dto(saved)
 

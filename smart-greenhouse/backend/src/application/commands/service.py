@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 
+from src.application.alerts.setup import build_event_bus
 from src.application.commands.dto import (
     CommandLogDto,
     CommandRequest,
@@ -9,6 +10,10 @@ from src.domain.actuators.context import (
 )
 from src.domain.commands.invoker import (
     CommandInvoker,
+)
+from src.domain.events.events import (
+    ActuatorStateChanged,
+    CommandFailed,
 )
 from src.infrastructure.adapters.actuators.factory import (
     build_actuator_port,
@@ -61,6 +66,9 @@ class CommandService:
             build_actuator_port(db)
         )
 
+        # Phase 11 — Observer
+        self.event_bus = build_event_bus(db)
+
     def execute(
         self,
         request: CommandRequest,
@@ -76,10 +84,12 @@ class CommandService:
                 "Actuator not found"
             )
 
+        # Unknown commands are checked before
+        # command_log is written.
         command = self.invoker.create(
-            command_type=request.command_type,
-            device_id=request.device_id,
-            payload=request.payload,
+            request.command_type,
+            request.device_id,
+            request.payload,
         )
 
         state_row = (
@@ -99,6 +109,9 @@ class CommandService:
             state=current_state,
         )
 
+        # Illegal commands are rejected.
+        # They do not call the actuator port
+        # and do not change actuator state.
         if (
             request.command_type
             not in context.allowed_commands
@@ -126,17 +139,24 @@ class CommandService:
             return command_log_to_dto(row)
 
         try:
+            # Phase 10 — Command pattern
             self.invoker.execute(
                 command=command,
                 port=self.actuator_port,
             )
 
+            # State update happens only after
+            # successful command execution.
             if (
                 command.target_state
                 is not None
                 and command.target_state
                 != context.state
             ):
+                previous_state = (
+                    context.state
+                )
+
                 context.transition_to(
                     command.target_state
                 )
@@ -148,7 +168,30 @@ class CommandService:
                     state=context.state,
                 )
 
+                # Phase 11 — Observer
+                #
+                # Publish state.changed only
+                # after the new state has been
+                # successfully persisted.
+                self.event_bus.publish(
+                    ActuatorStateChanged(
+                        device_id=actuator.id,
+                        location_id=(
+                            actuator.location_id
+                        ),
+                        zone_id=(
+                            actuator.zone_id
+                        ),
+                        previous_state=(
+                            previous_state
+                        ),
+                        state=context.state,
+                    )
+                )
+
         except Exception as exc:
+            error_message = str(exc)
+
             row = (
                 self.command_log_repository.create(
                     command_type=(
@@ -159,20 +202,49 @@ class CommandService:
                     ),
                     payload=request.payload,
                     status="failed",
-                    error_message=str(exc),
+                    error_message=(
+                        error_message
+                    ),
+                )
+            )
+
+            # Phase 11 — Observer
+            #
+            # Actual execution failures publish
+            # command.failed.
+            #
+            # Rejected commands do NOT publish
+            # CommandFailed.
+            self.event_bus.publish(
+                CommandFailed(
+                    device_id=actuator.id,
+                    location_id=(
+                        actuator.location_id
+                    ),
+                    zone_id=(
+                        actuator.zone_id
+                    ),
+                    command_type=(
+                        request.command_type
+                    ),
+                    error_message=(
+                        error_message
+                    ),
                 )
             )
 
             return command_log_to_dto(row)
 
-        row = self.command_log_repository.create(
-            command_type=(
-                request.command_type
-            ),
-            device_id=request.device_id,
-            payload=request.payload,
-            status="success",
-            error_message=None,
+        row = (
+            self.command_log_repository.create(
+                command_type=(
+                    request.command_type
+                ),
+                device_id=request.device_id,
+                payload=request.payload,
+                status="success",
+                error_message=None,
+            )
         )
 
         return command_log_to_dto(row)
